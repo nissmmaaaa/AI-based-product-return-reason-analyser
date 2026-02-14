@@ -1,0 +1,422 @@
+{
+  "name": "AI product return analyser",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7ce0fdce-13b6-4488-8c28-084aa3fb7921",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1lo92G9_Z5nJ5rhuUJ4Vr9lN6YUnXJ1HaO0csoaX8N78",
+          "mode": "list",
+          "cachedResultName": "return_sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lo92G9_Z5nJ5rhuUJ4Vr9lN6YUnXJ1HaO0csoaX8N78/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lo92G9_Z5nJ5rhuUJ4Vr9lN6YUnXJ1HaO0csoaX8N78/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f7b5afd6-c41d-4b7b-9a8a-4f2d9e32da3f",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "azCrZ9UQ7Tei3Ya7",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "e67915fb-1502-41dd-a00e-3e0a867b3c20",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "3c13f188-824e-404c-afc5-f69e9bb8ab80",
+      "name": "Webhook",
+      "webhookId": "e67915fb-1502-41dd-a00e-3e0a867b3c20"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "13969174-2eb2-4e7b-a80d-ef43b6aa1400",
+              "name": "reason",
+              "value": "={{$json.body.reason}}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "aee08bda-8c74-47cd-85a6-c2c0b5dc92c4",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Return reason: {{ $json.reason }}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an AI product return analyzer.\n\nClassify the return reason into:\n- Quality Issue\n- Size/Fit Issue\n- Damaged Product\n- Wrong Item\n- Delivery Delay\n- Customer Preference\n- Other\n\nDetect sentiment:\n- Neutral\n- Mild Negative\n- Negative\n- Very Angry\nDo not return anything outside this list\nIf unsure,choose neutral\nDetermine severity:\n- Low\n- Medium\n- High\n- Critical\n\nIf quality or damage related:\nQualityAlert = YES\nElse:\nQualityAlert = NO\n\nReturn ONLY valid JSON:\n{\n  \"category\": \"\",\n  \"sentiment\": \"\",\n  \"severity\": \"\",\n  \"QualityAlert\": \"\"\n  \"reason\":\"\"\n}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "a76b8927-a5f7-434f-a168-aab566596758",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-3-8b-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        800,
+        256
+      ],
+      "id": "cdbb22d3-49d6-4698-b34c-eb666cc0a3df",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "TfOW9bEC3G5lSWCS",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get AI full output text\nconst fullText = $json.output;\n\n// Extract JSON part from the text\nconst jsonMatch = fullText.match(/\\{[\\s\\S]*\\}/);\n\nif (!jsonMatch) {\n  throw new Error(\"No JSON found in AI output\");\n}\n\n// Parse extracted JSON\nconst parsed = JSON.parse(jsonMatch[0]);\n\n// Return structured result\nreturn [\n  {\n    json: {\n      category: parsed.category,\n      sentiment: parsed.sentiment,\n      severity: parsed.severity,\n      QualityAlert: parsed.QualityAlert,\n      reason: parsed.reason\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "e3e0863b-d4a6-4093-93a6-699b0b56d583",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fb9cb75a-1c57-45ad-a6f4-2a58a8ddb153",
+              "leftValue": "={{ $json[\"QualityAlert\"].toLowerCase() }}",
+              "rightValue": "=yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1760,
+        0
+      ],
+      "id": "bc3c83bd-5565-425f-b8ca-07cc617350b8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "nafeesnismarabi@gmail.com",
+        "subject": "Urgent:Product quality issue detected",
+        "message": "=Product Return Alert <br><br>\nCategory: {{$json.category}} <br>\nSeverity: {{$json.severity}}<br>\nReason: {{$json.reason}}<br>\nSentiment: {{$json.sentiment}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1968,
+        -96
+      ],
+      "id": "8b046b54-88fb-4da9-bd1b-976b967ded90",
+      "name": "Send a message",
+      "webhookId": "017f921d-864b-45c7-a548-5eef5f0e40e2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8ieGsDPW68zAXjwt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1lo92G9_Z5nJ5rhuUJ4Vr9lN6YUnXJ1HaO0csoaX8N78",
+          "mode": "list",
+          "cachedResultName": "return_sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lo92G9_Z5nJ5rhuUJ4Vr9lN6YUnXJ1HaO0csoaX8N78/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lo92G9_Z5nJ5rhuUJ4Vr9lN6YUnXJ1HaO0csoaX8N78/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Order ID": "={{ $json.body.orderId }}",
+            "Product": "={{ $json.body.product }}",
+            "Rating": "={{ $json.body.rating }}",
+            "Return Reason": "={{ $json.body.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Order ID",
+              "displayName": "Order ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Return Reason",
+              "displayName": "Return Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1968,
+        96
+      ],
+      "id": "47f90042-0ad4-4112-a55d-4e3ba1d61117",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "azCrZ9UQ7Tei3Ya7",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "4e97023b-efba-451e-a37f-0c04434420aa",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1
+  },
+  "versionId": "b09555b8-447c-42c5-a790-7eb87477970f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa89915e2f0f3fefdc1677f177b0de99d607875c66e5ba452e35da6b4bb4eae8"
+  },
+  "id": "uExeMagGsNwNt1N_V_8DE",
+  "tags": []
+}

@@ -127,3 +127,36 @@ Dashboard integration (Power BI / Looker / Notion)
 SKU-level trend analysis
 
 Predictive return pattern detection
+
+## How to Use
+### 1. Import Workflow
+
+Open n8n
+
+Click “Import Workflow”
+
+Upload the provided JSON file
+
+### 2. Configure Credentials
+
+Set up the following credentials inside n8n:
+
+OpenAI API Key
+
+Google Sheets API credentials
+
+Email (SMTP) credentials (if alerts are enabled)
+
+### 3. Update Node Settings
+
+Select your Google Sheet ID
+
+Configure target sheet name
+
+Update email recipient address for alerts
+
+### 4. Execute Workflow
+
+Run manually for testing
+
+Or activate for real-time automation (Webhook mode)

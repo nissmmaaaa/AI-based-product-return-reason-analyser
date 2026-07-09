@@ -160,3 +160,7 @@ Update email recipient address for alerts
 Run manually for testing
 
 Or activate for real-time automation (Webhook mode)
+
+
+<img width="1706" height="739" alt="Screenshot 2026-02-14 203910" src="https://github.com/user-attachments/assets/4fd8d6ca-ad66-491b-b78a-220940f15fcb" />
+
